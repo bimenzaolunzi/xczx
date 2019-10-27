@@ -1,5 +1,6 @@
 package com.xuecheng.framework.domain.cms.request;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 /**
@@ -8,6 +9,7 @@ import lombok.Data;
 @Data
 public class QueryPageRequset {
     //接收页面查询的条件
+    @ApiModelProperty("站点ID")
     //站点ID
     private String siteId;
     //页面id
