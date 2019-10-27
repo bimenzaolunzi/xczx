@@ -17,6 +17,7 @@ public class QueryPageRequset {
     //页面名称
     private String pageName;
     //别名
+    @ApiModelProperty("页面别名")
     private String pageAliase;
     //模板id
     private String templateId;

@@ -6,11 +6,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
+import org.springframework.data.mongodb.core.mapping.TextScore;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -114,4 +114,32 @@ public class CmsPageReositoryTest {
         }
     }
 
+    /**
+     * 自定义查询
+     */
+    @Test
+    public void testExample() throws UnsupportedEncodingException {
+        //这里注意一个问题,of里面传入的两个参数,page是起始页面,有的数据比较少,如果起始页面写1,那么查询到的是空
+        PageRequest pageRequest = PageRequest.of(0, 10);
+        CmsPage cmsPage = new CmsPage();
+        cmsPage.setPageAliase("这是修改后的");
+        // cmsPage.setPageName("测试页面");
+
+        ExampleMatcher exampleMatcher = ExampleMatcher.matching();
+        //返回一个exampleMatcher对象,赋值即可
+        exampleMatcher = exampleMatcher.withMatcher("pageAliase", ExampleMatcher.GenericPropertyMatchers.contains());
+        // 包含关键字
+        //  ExampleMatcher.GenericPropertyMatchers.contains()
+        //末尾匹配
+        //  ExampleMatcher.GenericPropertyMatchers.endsWith()
+        //正则表达
+        // ExampleMatcher.GenericPropertyMatchers.regex()
+
+        Example<CmsPage> example = Example.of(cmsPage, exampleMatcher);
+
+        Page<CmsPage> all = cmsPageReository.findAll(example, pageRequest);
+
+        List<CmsPage> content = all.getContent();
+        System.out.println("all = " + content);
+    }
 }

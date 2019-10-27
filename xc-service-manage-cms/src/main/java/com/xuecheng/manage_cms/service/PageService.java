@@ -6,7 +6,11 @@ import com.xuecheng.framework.model.response.CommonCode;
 import com.xuecheng.framework.model.response.QueryResponseResult;
 import com.xuecheng.framework.model.response.QueryResult;
 import com.xuecheng.manage_cms.dao.CmsPageReository;
+import org.apache.commons.lang3.StringUtils;
+import org.mockito.internal.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -29,26 +33,54 @@ public class PageService {
      * @return
      */
     public QueryResponseResult findList(int page, int size, QueryPageRequset queryPageRequest) {
+        //首先判断queryPageRequest是否为空,为空就复赋值
+        if (queryPageRequest == null) {
+            queryPageRequest = new QueryPageRequset();
+        }
+        //自定义条件查询
+        ExampleMatcher exampleMatcher = ExampleMatcher.matching()
+                .withMatcher("pageAliase", ExampleMatcher.GenericPropertyMatchers.contains());
+        CmsPage cmsPage = new CmsPage();
+        //设置条件值 站点id ,queryPageRequest.getSiteId()这行代码有空指针风险,所以需要在上面进行重新判断new对象
+        if (StringUtils.isNotEmpty(queryPageRequest.getSiteId())) {
+            cmsPage.setSiteId(queryPageRequest.getSiteId());
+        }
+        //设置模板DI  注意工具类的方法名字,isNotEmpty和isEmpty
+        if (StringUtils.isNotEmpty(queryPageRequest.getTemplateId())) {
+            cmsPage.setTemplateId(queryPageRequest.getTemplateId());
+        }
+        //设置页面别名
+        if (StringUtils.isNotEmpty(queryPageRequest.getPageAliase())) {
+            cmsPage.setPageAliase(queryPageRequest.getPageAliase());
+        }
+
+
         //分页参数
         if (page <= 0) {
             page = 1;
         }
+        //因为page传给dao的时候一定是0开始的
+        page = page - 1;
         if (size <= 0) {
             size = 10;
         }
-        //因为page传给dao的时候一定是0开始的
-        page = page - 1;
+
         PageRequest pageable = PageRequest.of(page, size);
-        Page<CmsPage> all = cmsPageReository.findAll(pageable);
+        //传入查询的例子模板
+        Example<CmsPage> example = Example.of(cmsPage, exampleMatcher);
+        //实现自定义条件查询并且分页查询
+        Page<CmsPage> all = cmsPageReository.findAll(example, pageable);
+        if (all.getContent().size() <= 0) {
+            return new QueryResponseResult(CommonCode.SERVER_ERROR, null);
+        }
+
+
         //QueryResponseResult里面需要两个参数,一个返回查询解决,一个是查询的结果
         QueryResult<CmsPage> packageQueryResult = new QueryResult<>();
         //先查看QueryResult里面的成员变量,一个list一个是total
         packageQueryResult.setList(all.getContent());//数据列表
         packageQueryResult.setTotal(all.getTotalPages());//数据总记录数
-
-
         return new QueryResponseResult(CommonCode.SUCCESS, packageQueryResult);
-
 
 
     }
