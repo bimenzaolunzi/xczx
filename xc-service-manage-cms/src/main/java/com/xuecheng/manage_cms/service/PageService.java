@@ -2,6 +2,7 @@ package com.xuecheng.manage_cms.service;
 
 import com.xuecheng.framework.domain.cms.CmsPage;
 import com.xuecheng.framework.domain.cms.request.QueryPageRequset;
+import com.xuecheng.framework.domain.cms.response.CmsPageResult;
 import com.xuecheng.framework.model.response.CommonCode;
 import com.xuecheng.framework.model.response.QueryResponseResult;
 import com.xuecheng.framework.model.response.QueryResult;
@@ -53,8 +54,6 @@ public class PageService {
         if (StringUtils.isNotEmpty(queryPageRequest.getPageAliase())) {
             cmsPage.setPageAliase(queryPageRequest.getPageAliase());
         }
-
-
         //分页参数
         if (page <= 0) {
             page = 1;
@@ -81,8 +80,27 @@ public class PageService {
         packageQueryResult.setList(all.getContent());//数据列表
         packageQueryResult.setTotal(all.getTotalPages());//数据总记录数
         return new QueryResponseResult(CommonCode.SUCCESS, packageQueryResult);
+    }
 
+    /**
+     * 新增页面
+     * @param cmsPage 页面信息
+     * @return
+     */
+    public CmsPageResult add(CmsPage cmsPage) {
+        //保存页面之前需要先判断页面是否存在
+        //根据页面名称,站点ID,页面路径.去cmspage集合,如果查到说明此页面已经存在,如果查询不到再继续添加
+        CmsPage cmsPage1 = cmsPageReository.findByPageNameAndSiteIdAndPageWebPath(cmsPage.getPageName(), cmsPage.getSiteId(), cmsPage.getPageWebPath());
+         if (cmsPage1==null){
+             //因为mogodb的主键是自增,为了防止别人给我设置主键,我将cmspage之间设置为空
+             cmsPage.setPageId(null);
+             //如果查询的对象为空,那么久保存
+             cmsPageReository.save(cmsPage);
+             return new CmsPageResult(CommonCode.SUCCESS,cmsPage);
+         }
+        //保存页面
 
+        return new CmsPageResult(CommonCode.FAIL,cmsPage1);
     }
 
 }

@@ -29,7 +29,7 @@ public class CmsPageReositoryTest {
     public void testfindAll() {
         //上面是接口的类型,因为spring会根据他的接口生成实现类
         List<CmsPage> all = cmsPageReository.findAll();
-        System.out.println("all = " + all);
+      //  System.out.println("all = " + all);
 
     }
 
@@ -42,13 +42,13 @@ public class CmsPageReositoryTest {
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
         Page<CmsPage> all = cmsPageReository.findAll(pageable);
-        System.out.println("all = " + all);
+      //  System.out.println("all = " + all);
     }
 
     /**
-     * 保存的方法
+     * 保存的方法,这个测试方法只能保存一次,重复install会报错
      */
-    @Test
+   /* @Test
     public void testSave() {
         CmsPage cmsPage = new CmsPage();
         cmsPage.setSiteId("s001");
@@ -56,14 +56,14 @@ public class CmsPageReositoryTest {
         cmsPage.setPageName("测试页面");
         List<CmsPageParam> list = new ArrayList<>();
         CmsPageParam cmsPageParam = new CmsPageParam();
-        cmsPageParam.setPageParamName("param1");
-        cmsPageParam.setPageParamValue("value1");
+        cmsPageParam.setPageParamName("param2");
+        cmsPageParam.setPageParamValue("value2");
         list.add(cmsPageParam);
         cmsPage.setPageParams(list);
         cmsPageReository.save(cmsPage);
-        System.out.println("cmsPage = " + cmsPage);
+     //   System.out.println("cmsPage = " + cmsPage);
 
-    }
+    }*/
 
     /**
      * 根据主键删除
@@ -108,7 +108,7 @@ public class CmsPageReositoryTest {
         Optional<CmsPage> optional = cmsPageReository.findBySiteIdAndPageAliase("s001", "这是修改后的属性值");
         if (optional.isPresent()) {
             CmsPage cmsPage = optional.get();
-            System.out.println("cmsPage = " + cmsPage);
+           // System.out.println("cmsPage = " + cmsPage);
         } else {
             System.out.println("这个集合为空");
         }
@@ -140,6 +140,6 @@ public class CmsPageReositoryTest {
         Page<CmsPage> all = cmsPageReository.findAll(example, pageRequest);
 
         List<CmsPage> content = all.getContent();
-        System.out.println("all = " + content);
+       // System.out.println("all = " + content);
     }
 }
