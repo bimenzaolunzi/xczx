@@ -6,6 +6,7 @@ import com.xuecheng.framework.domain.cms.response.CmsPageResult;
 import com.xuecheng.framework.model.response.CommonCode;
 import com.xuecheng.framework.model.response.QueryResponseResult;
 import com.xuecheng.framework.model.response.QueryResult;
+import com.xuecheng.framework.model.response.ResponseResult;
 import com.xuecheng.manage_cms.dao.CmsPageReository;
 import org.apache.commons.lang3.StringUtils;
 import org.mockito.internal.util.StringUtil;
@@ -147,6 +148,17 @@ public class PageService {
         }
         //如果为没空就修改失败
         return new CmsPageResult(CommonCode.FAIL, null);
+    }
+
+
+    public ResponseResult delete(String id){
+        //删除之前先查询页面是否存在
+        CmsPage byId = this.findById(id);
+        if (null!=byId){
+            cmsPageReository.deleteById(id);
+            return new ResponseResult(CommonCode.SUCCESS);
+        }
+        return new ResponseResult(CommonCode.FAIL);
     }
 
 }

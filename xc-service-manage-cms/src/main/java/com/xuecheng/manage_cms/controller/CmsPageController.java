@@ -7,8 +7,10 @@ import com.xuecheng.framework.domain.cms.response.CmsPageResult;
 import com.xuecheng.framework.model.response.CommonCode;
 import com.xuecheng.framework.model.response.QueryResponseResult;
 import com.xuecheng.framework.model.response.QueryResult;
+import com.xuecheng.framework.model.response.ResponseResult;
 import com.xuecheng.manage_cms.service.PageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -68,13 +70,25 @@ public class CmsPageController implements CmsPageControllerApi {
 
     /**
      * 根据id查询页面,再通过传入新的页面,后台进行修改
+     *
      * @param id
      * @param cmsPage
      * @return
      */
     @PutMapping("/edit/{id}")//这里使用put方法,http方法中put表示更新
-    public CmsPageResult edit(@PathVariable("id")String id, @RequestBody CmsPage cmsPage) {
+    public CmsPageResult edit(@PathVariable("id") String id, @RequestBody CmsPage cmsPage) {
         return pageService.update(id, cmsPage);
+    }
+
+    /**
+     * 根据也面的ID删除页面,提示删除之前先查询页面是否存在
+     * @param id
+     * @return
+     */
+    @DeleteMapping("/del/{id}")
+    @Override
+    public ResponseResult delete(@PathVariable("id") String id) {
+        return pageService.delete(id);
     }
 
 
