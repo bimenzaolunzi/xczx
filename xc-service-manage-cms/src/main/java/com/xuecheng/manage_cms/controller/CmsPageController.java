@@ -44,6 +44,7 @@ public class CmsPageController implements CmsPageControllerApi {
 
     /**
      * RequestBody 作用是将前台传过来的json数据转换成对象
+     *
      * @param cmsPage
      * @return
      */
@@ -53,6 +54,27 @@ public class CmsPageController implements CmsPageControllerApi {
         return pageService.add(cmsPage);
 
 
+    }
+
+    //根据页面ID查询页面信息
+    @GetMapping("/get/{id}")
+    public CmsPage findById(@PathVariable("id") String id) {
+        return pageService.findById(id);
+    }
+
+    ;
+
+    //修改页面
+
+    /**
+     * 根据id查询页面,再通过传入新的页面,后台进行修改
+     * @param id
+     * @param cmsPage
+     * @return
+     */
+    @PutMapping("/edit/{id}")//这里使用put方法,http方法中put表示更新
+    public CmsPageResult edit(@PathVariable("id")String id, @RequestBody CmsPage cmsPage) {
+        return pageService.update(id, cmsPage);
     }
 
 

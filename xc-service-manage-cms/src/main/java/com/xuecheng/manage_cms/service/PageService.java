@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PageService {
@@ -78,12 +79,13 @@ public class PageService {
         QueryResult<CmsPage> packageQueryResult = new QueryResult<>();
         //先查看QueryResult里面的成员变量,一个list一个是total
         packageQueryResult.setList(all.getContent());//数据列表
-        packageQueryResult.setTotal(all.getTotalPages());//数据总记录数
+        packageQueryResult.setTotal(all.getTotalElements());//数据总记录数
         return new QueryResponseResult(CommonCode.SUCCESS, packageQueryResult);
     }
 
     /**
      * 新增页面
+     *
      * @param cmsPage 页面信息
      * @return
      */
@@ -91,16 +93,60 @@ public class PageService {
         //保存页面之前需要先判断页面是否存在
         //根据页面名称,站点ID,页面路径.去cmspage集合,如果查到说明此页面已经存在,如果查询不到再继续添加
         CmsPage cmsPage1 = cmsPageReository.findByPageNameAndSiteIdAndPageWebPath(cmsPage.getPageName(), cmsPage.getSiteId(), cmsPage.getPageWebPath());
-         if (cmsPage1==null){
-             //因为mogodb的主键是自增,为了防止别人给我设置主键,我将cmspage之间设置为空
-             cmsPage.setPageId(null);
-             //如果查询的对象为空,那么久保存
-             cmsPageReository.save(cmsPage);
-             return new CmsPageResult(CommonCode.SUCCESS,cmsPage);
-         }
+        if (cmsPage1 == null) {
+            //因为mogodb的主键是自增,为了防止别人给我设置主键,我将cmspage之间设置为空
+            cmsPage.setPageId(null);
+            //如果查询的对象为空,那么久保存
+            cmsPageReository.save(cmsPage);
+            return new CmsPageResult(CommonCode.SUCCESS, cmsPage);
+        }
         //保存页面
 
-        return new CmsPageResult(CommonCode.FAIL,cmsPage1);
+        return new CmsPageResult(CommonCode.FAIL, cmsPage1);
+    }
+
+    //根据页面ID查询页面信息
+    public CmsPage findById(String id) {
+        Optional<CmsPage> byId = cmsPageReository.findById(id);
+        //判断选项是否存在
+        if (byId.isPresent()) {
+            CmsPage cmsPage = byId.get();
+            return cmsPage;
+        }
+        return null;
+    }
+
+    ;
+
+    //修改页面
+    public CmsPageResult update(String id, CmsPage cmsPage) {
+        //根据ID从数据库查询信息
+        CmsPage cmsPage1 = this.findById(id);
+        if (cmsPage1 != null) {
+            //准备更新书库
+            //设置要修改的书库
+            //模板id
+            cmsPage1.setTemplateId(cmsPage.getTemplateId());
+            //所属站点
+            cmsPage1.setSiteId(cmsPage.getSiteId());
+            //别名
+            cmsPage1.setPageAliase(cmsPage.getPageAliase());
+            //页面名称
+            cmsPage1.setPageName(cmsPage.getPageName());
+            //web访问路径
+            cmsPage1.setPageWebPath(cmsPage.getPageWebPath());
+            //物理路径
+            cmsPage1.setPagePhysicalPath(cmsPage.getPagePhysicalPath());
+            //修改完成后保存
+            CmsPage save = cmsPageReository.save(cmsPage1);
+            if (save!=null){
+                return new CmsPageResult(CommonCode.SUCCESS, cmsPage1);
+            }
+
+
+        }
+        //如果为没空就修改失败
+        return new CmsPageResult(CommonCode.FAIL, null);
     }
 
 }
