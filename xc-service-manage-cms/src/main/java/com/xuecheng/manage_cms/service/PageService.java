@@ -2,14 +2,15 @@ package com.xuecheng.manage_cms.service;
 
 import com.xuecheng.framework.domain.cms.CmsPage;
 import com.xuecheng.framework.domain.cms.request.QueryPageRequset;
+import com.xuecheng.framework.domain.cms.response.CmsCode;
 import com.xuecheng.framework.domain.cms.response.CmsPageResult;
+import com.xuecheng.framework.exception.ExceptionCast;
 import com.xuecheng.framework.model.response.CommonCode;
 import com.xuecheng.framework.model.response.QueryResponseResult;
 import com.xuecheng.framework.model.response.QueryResult;
 import com.xuecheng.framework.model.response.ResponseResult;
 import com.xuecheng.manage_cms.dao.CmsPageReository;
 import org.apache.commons.lang3.StringUtils;
-import org.mockito.internal.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
@@ -17,8 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -91,21 +90,24 @@ public class PageService {
      * @return
      */
     public CmsPageResult add(CmsPage cmsPage) {
+        if (cmsPage==null){
+            //抛出异常,非法参数异常
+            ExceptionCast.cast(CmsCode.CMS_COURSE_PARAMETERISNULL);
+        }
         //保存页面之前需要先判断页面是否存在
         //根据页面名称,站点ID,页面路径.去cmspage集合,如果查到说明此页面已经存在,如果查询不到再继续添加
         CmsPage cmsPage1 = cmsPageReository.findByPageNameAndSiteIdAndPageWebPath(cmsPage.getPageName(), cmsPage.getSiteId(), cmsPage.getPageWebPath());
-        if (cmsPage1 == null) {
-            //因为mogodb的主键是自增,为了防止别人给我设置主键,我将cmspage之间设置为空
-            cmsPage.setPageId(null);
-            //如果查询的对象为空,那么久保存
-            cmsPageReository.save(cmsPage);
-            return new CmsPageResult(CommonCode.SUCCESS, cmsPage);
+        if (cmsPage1 != null) {
+            //页面已经存在
+            //抛出异常,异常内容是页面已经存在
+            ExceptionCast.cast(CmsCode.CMS_ADDPAGE_EXISTSNAME);
         }
-        //保存页面
-
-        return new CmsPageResult(CommonCode.FAIL, cmsPage1);
+        //因为mogodb的主键是自增,为了防止别人给我设置主键,我将cmspage之间设置为空
+        cmsPage.setPageId(null);
+        //如果查询的对象为空,那么久保存
+        cmsPageReository.save(cmsPage);
+        return new CmsPageResult(CommonCode.SUCCESS, cmsPage);
     }
-
     //根据页面ID查询页面信息
     public CmsPage findById(String id) {
         Optional<CmsPage> byId = cmsPageReository.findById(id);
@@ -140,7 +142,7 @@ public class PageService {
             cmsPage1.setPagePhysicalPath(cmsPage.getPagePhysicalPath());
             //修改完成后保存
             CmsPage save = cmsPageReository.save(cmsPage1);
-            if (save!=null){
+            if (save != null) {
                 return new CmsPageResult(CommonCode.SUCCESS, cmsPage1);
             }
 
@@ -151,10 +153,10 @@ public class PageService {
     }
 
 
-    public ResponseResult delete(String id){
+    public ResponseResult delete(String id) {
         //删除之前先查询页面是否存在
         CmsPage byId = this.findById(id);
-        if (null!=byId){
+        if (null != byId) {
             cmsPageReository.deleteById(id);
             return new ResponseResult(CommonCode.SUCCESS);
         }
