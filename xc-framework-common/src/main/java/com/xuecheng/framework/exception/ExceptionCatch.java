@@ -1,12 +1,14 @@
 package com.xuecheng.framework.exception;
 
+import com.google.common.collect.ImmutableMap;
+import com.xuecheng.framework.model.response.CommonCode;
 import com.xuecheng.framework.model.response.ResponseResult;
 import com.xuecheng.framework.model.response.ResultCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
@@ -18,10 +20,14 @@ public class ExceptionCatch {
     private static final Logger LOGGER = LoggerFactory.getLogger(ExceptionCatch.class);
 
     //定义map,配置异常类型所对应的错误代码
+    private static ImmutableMap<Class<? extends Throwable>, ResultCode> EXCEPTIONS;
+    //定义map的builser,去构建ImmutableMap
+    protected static ImmutableMap.Builder<Class<? extends Throwable>, ResultCode> builder = ImmutableMap.builder();
 
-
-
-
+    static {
+        //定义了异常类型所对应的错误代码
+        builder.put(HttpMessageNotReadableException.class, CommonCode.INVALID_PARAM);
+    }
 
     //捕获CustomException此类异常,就会执行这个方法
     @ExceptionHandler(CustomException.class)
@@ -39,7 +45,18 @@ public class ExceptionCatch {
     public ResponseResult exception(Exception exception) {
         //记录日志
         LOGGER.error("catch exception:{}", exception.getMessage());
-        //todo:这里错误代码没有定义完
-        return null;
+
+        if (EXCEPTIONS == null) {
+            EXCEPTIONS = builder.build();
+        }
+        //从EXCEPTIONS中找异常类型所对应的异常代码
+        ResultCode resultCode = EXCEPTIONS.get(exception.getClass());
+        if (resultCode != null) {
+            return new ResponseResult(resultCode);
+        } else {
+            //返回99999异常代码
+            return new ResponseResult(CommonCode.SERVER_ERROR);
+        }
     }
+
 }
