@@ -5,7 +5,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
 
-public interface CmsPageReository extends MongoRepository<CmsPage, String> {
+public interface CmsPageRepository extends MongoRepository<CmsPage, String> {
 
     /**
      * 可以自定查询方法,中间用and连接,参数需要后期手动添加到形参里面

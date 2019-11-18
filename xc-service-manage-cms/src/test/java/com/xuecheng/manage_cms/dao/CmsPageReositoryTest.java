@@ -1,17 +1,14 @@
 package com.xuecheng.manage_cms.dao;
 
 import com.xuecheng.framework.domain.cms.CmsPage;
-import com.xuecheng.framework.domain.cms.CmsPageParam;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.*;
-import org.springframework.data.mongodb.core.mapping.TextScore;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,7 +17,7 @@ import java.util.Optional;
 public class CmsPageReositoryTest {
 
     @Autowired
-    CmsPageReository cmsPageReository;
+    CmsPageRepository cmsPageReository;
 
     /**
      * 查询所有
