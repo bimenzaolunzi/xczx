@@ -1,5 +1,6 @@
 package com.xuecheng.manage_cms_client.service;
 
+import com.alibaba.fastjson.JSON;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSDownloadStream;
 import com.mongodb.client.gridfs.model.GridFSFile;
@@ -14,6 +15,7 @@ import com.xuecheng.framework.model.response.CommonCode;
 import com.xuecheng.framework.model.response.QueryResponseResult;
 import com.xuecheng.framework.model.response.QueryResult;
 import com.xuecheng.framework.model.response.ResponseResult;
+import com.xuecheng.manage_cms_client.config.RabbitmqConfig;
 import com.xuecheng.manage_cms_client.dao.CmsConfigRepository;
 import com.xuecheng.manage_cms_client.dao.CmsPageRepository;
 import com.xuecheng.manage_cms_client.dao.CmsTemplateRepository;
@@ -22,6 +24,8 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.types.ObjectId;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
@@ -37,6 +41,9 @@ import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -44,17 +51,20 @@ import java.util.Optional;
 public class PageService {
 
     @Autowired
-    CmsPageRepository cmsPageReository;
+    CmsPageRepository cmsPageRepository;
     @Autowired
     CmsConfigRepository cmsConfigReository;
     @Autowired
     CmsTemplateRepository cmsTemplateRepository;
+
     @Autowired
     RestTemplate restTemplate;
     @Autowired
     GridFsTemplate gridFsTemplate;
     @Autowired
     GridFSBucket gridFSBucket;
+    @Autowired
+    RabbitTemplate rabbitTemplate;
 
     /**
      * 暴露接口一定要告诉别人从第几页开始
@@ -99,7 +109,7 @@ public class PageService {
         //传入查询的例子模板
         Example<CmsPage> example = Example.of(cmsPage, exampleMatcher);
         //实现自定义条件查询并且分页查询
-        Page<CmsPage> all = cmsPageReository.findAll(example, pageable);
+        Page<CmsPage> all = cmsPageRepository.findAll(example, pageable);
         if (all.getContent().size() <= 0) {
             return new QueryResponseResult(CommonCode.SERVER_ERROR, null);
         }
@@ -126,7 +136,7 @@ public class PageService {
         }
         //保存页面之前需要先判断页面是否存在
         //根据页面名称,站点ID,页面路径.去cmspage集合,如果查到说明此页面已经存在,如果查询不到再继续添加
-        CmsPage cmsPage1 = cmsPageReository.findByPageNameAndSiteIdAndPageWebPath(cmsPage.getPageName(), cmsPage.getSiteId(), cmsPage.getPageWebPath());
+        CmsPage cmsPage1 = cmsPageRepository.findByPageNameAndSiteIdAndPageWebPath(cmsPage.getPageName(), cmsPage.getSiteId(), cmsPage.getPageWebPath());
         if (cmsPage1 != null) {
             //页面已经存在
             //抛出异常,异常内容是页面已经存在
@@ -135,13 +145,13 @@ public class PageService {
         //因为mogodb的主键是自增,为了防止别人给我设置主键,我将cmspage之间设置为空
         cmsPage.setPageId(null);
         //如果查询的对象为空,那么久保存
-        cmsPageReository.save(cmsPage);
+        cmsPageRepository.save(cmsPage);
         return new CmsPageResult(CommonCode.SUCCESS, cmsPage);
     }
 
     //根据页面ID查询页面信息
     public CmsPage findById(String id) {
-        Optional<CmsPage> byId = cmsPageReository.findById(id);
+        Optional<CmsPage> byId = cmsPageRepository.findById(id);
         //判断选项是否存在
         if (byId.isPresent()) {
             CmsPage cmsPage = byId.get();
@@ -175,7 +185,7 @@ public class PageService {
             //todo:暂未调试
             cmsPage1.setDataUrl(cmsPage.getDataUrl());
             //修改完成后保存
-            CmsPage save = cmsPageReository.save(cmsPage1);
+            CmsPage save = cmsPageRepository.save(cmsPage1);
             if (save != null) {
                 return new CmsPageResult(CommonCode.SUCCESS, cmsPage1);
             }
@@ -189,7 +199,7 @@ public class PageService {
         //删除之前先查询页面是否存在
         CmsPage byId = this.findById(id);
         if (null != byId) {
-            cmsPageReository.deleteById(id);
+            cmsPageRepository.deleteById(id);
             return new ResponseResult(CommonCode.SUCCESS);
         }
         return new ResponseResult(CommonCode.FAIL);
@@ -310,16 +320,56 @@ public class PageService {
     }
 
     //页面发布
-    public ResponseResult post(String pageId){
+    public ResponseResult postPage(String pageId) {
         //执行页面静态化
         String pageHtml = this.getPageHtml(pageId);
         //将页面静态化文件储存到GridFs中
-       CmsPage cmsPage= saveHtml(pageId,pageHtml);
+        CmsPage cmsPage = saveHtml(pageId, pageHtml);
         //向MQ发消息
-        return  null;
+        sendPostPage(pageId);
+        return new ResponseResult(CommonCode.SUCCESS);
     }
 
-    private CmsPage saveHtml(String pageId,String content){
+    // 发送页面发布消息
+    private void sendPostPage(String pageId) {
+        CmsPage cmsPage = this.findById(pageId);
+        if (cmsPage == null) {
+            ExceptionCast.cast(CmsCode.CMS_PAGE_NOTEXISTS);
+        }
+        Map<String, String> msgMap = new HashMap<>();
+        msgMap.put("pageId", pageId);
+        String msg = JSON.toJSONString(msgMap);
+        // 获取站点ID作为routingKey
+        String siteId = cmsPage.getSiteId();
+        // 发布消息
+        rabbitTemplate.convertAndSend(RabbitmqConfig.EX_ROUTING_CMS_POSTPAGE,siteId,msg);
+    }
 
+    // 保存静态页面内容
+    private CmsPage saveHtml(String pageId, String htmlContent) {
+        Optional<CmsPage> optional = cmsPageRepository.findById(pageId);
+        if (!optional.isPresent()) {
+            ExceptionCast.cast(CmsCode.CMS_PAGE_NOTEXISTS);
+        }
+        CmsPage cmsPage = optional.get();
+        //储存之前先删除
+        String htmlFileId = cmsPage.getHtmlFileId();
+        if (StringUtils.isNotEmpty(htmlFileId)) {
+            gridFsTemplate.delete(Query.query(Criteria.where("_id").is(htmlFileId)));
+        }
+        //保存html文件到GridFs
+        InputStream inputStream = null;
+        try {
+            inputStream = IOUtils.toInputStream(htmlContent, "UTF-8");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        ObjectId objectId = gridFsTemplate.store(inputStream, cmsPage.getPageName());
+        // 文件Id
+        String filedId = objectId.toString();
+        //将文件Id储存到cmsPage中
+        cmsPage.setHtmlFileId(filedId);
+        cmsPageRepository.save(cmsPage);
+        return cmsPage;
     }
 }

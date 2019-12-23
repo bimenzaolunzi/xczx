@@ -1,5 +1,5 @@
 server:
-  port: 31000
+  port: 31003
 spring:
   application:
     name: xc-service-manage-cms-client
@@ -8,11 +8,11 @@ spring:
       uri: mongodb://root:root@localhost:27017
       database: xc_cms
   rabbitmq:
-    virtual-host: /
     host: 127.0.0.1
     username: guest
     password: guest
     port: 5672
+    virtualHost: /
 xuecheng:
   mq: # cms客户端监控的队列名称(不同的客户端监控的队列不能重复)
     queue: queue_cms_postpage_01

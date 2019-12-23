@@ -2,6 +2,7 @@ package com.xuecheng.manage_cms_client.mq;
 
 import com.alibaba.fastjson.JSON;
 import com.xuecheng.framework.domain.cms.CmsPage;
+import com.xuecheng.manage_cms_client.dao.CmsPageRepository;
 import com.xuecheng.manage_cms_client.service.PageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,8 @@ public class ConsumerPostPage {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsumerPostPage.class);
     @Autowired
     PageService pageService;
+    @Autowired
+    CmsPageRepository cmsPageRepository;
 
     @RabbitListener(queues={"${xuecheng.mq.queue}"})
     public void postPage(String msg) {

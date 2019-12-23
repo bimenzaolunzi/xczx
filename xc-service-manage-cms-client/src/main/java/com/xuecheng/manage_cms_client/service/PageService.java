@@ -41,7 +41,7 @@ public class PageService {
         // 从gridFS中查询html文件
         InputStream inputStream = this.getFileById(htmlFileId);
         if (inputStream == null) {
-            logger.error("getFileById inputStream is null ,htmlFileId:{" + htmlFileId + "}");
+            logger.error("getFileById inputStream is null ,htmlFileId:[{}]"+htmlFileId);
             return;
         }
         // 得到站点的id
@@ -55,7 +55,7 @@ public class PageService {
         // 将html文件保存到服务器路径上
         FileOutputStream fileOutputStream = null;
         try {
-             fileOutputStream = new FileOutputStream(new File("D:\\item"));
+             fileOutputStream = new FileOutputStream(new File(pagePath));
             IOUtils.copy(inputStream, fileOutputStream);
 
         } catch (Exception e) {
